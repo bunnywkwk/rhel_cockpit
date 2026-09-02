@@ -1,0 +1,31 @@
+---
+# Cockpit security & Service Configuration
+
+# Create the /etc/cockpit configuration directory if it does not exist
+
+- name: Ensure /etc/cockpit directory exist
+  ansible.builtin.file:
+    path: /etc/cockpit
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+# Generate /etc/cockpit/cockpit.conf with security settings, banner, and idle timeout
+- name: Deploy /etc/cockpit/cockpit.conf configuration template
+  ansible.builtin.template:
+    src: cockpit.conf.j2
+    dest: /etc/cockpit/cockpit.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart cockpit.socket
+
+# Ensure root user is permitted to login via cockpt by removing root from disallowed-users
+- name: Ensure root is allowed to log into Cockpit web console
+  ansible.builtin.lineinfile:
+    path: /etc/cockpit/disallowed-users
+    line: root
+    state: absent
+  when: cockpit_allow_root_login | bool
+  failed_when: false

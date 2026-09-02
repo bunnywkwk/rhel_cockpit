@@ -1,0 +1,21 @@
+---
+# Firewall Configuration
+
+# Checks if firewalld service is installed and running
+- name: Check if the firewalld is active
+  ansible.builtin.command:
+    cmd: systemctl is-active firewalld
+  register: cockpit_firewalld_status
+  changed_when: false
+  failed_when: false
+
+# Permanently permits cockpit service (port 9090/tcp) in firewalld
+- name: Permit Cockpit service through firewalld
+  ansible.posix.firewalld:
+    service: "{{ cockpit_firewall_service }}"
+    zone: "{{ cockpit_firewall_zone }}"
+    permanent: true
+    immediate: true
+    state: enabled
+  when: cockpit_firewalld_status.rc == 0
+  notify: Reload firewalld

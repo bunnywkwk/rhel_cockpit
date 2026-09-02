@@ -1,0 +1,10 @@
+---
+# ==============================================================================
+# rhel_cockpit Test Playbook
+# ==============================================================================
+
+- name: Test rhel_cockpit Role Execution
+  hosts: test_host1
+  become: true
+  roles:
+    - rhel_cockpit

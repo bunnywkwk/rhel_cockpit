@@ -1,0 +1,6 @@
+---
+cockpit_hosts:
+  hosts:
+    test_host1:
+      ansible_host: 192.168.122.173
+      ansible_user: root

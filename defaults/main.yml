@@ -1,0 +1,38 @@
+---
+# rhel_cockpit defalt values
+
+# Cockcpit web packages to instal
+
+cockpit_packages:
+  - cockpit
+  - cockpit-machines
+  - cockpit-storaged
+  - cockpit-networkmanager
+  - cockpit-system
+
+# Legacy FUI pacakges to ensure are ABSENT (headless hypervisor design)
+cockpit_absent_packages:
+  - virt-manager
+
+# Socker Activation and service state
+cockpit_service_name: cockpit.socket
+cockpit_service_state: started
+cockpit_service_enabled: true
+
+# Firewall management (open TCP port 9090 for cockpit)
+cockpit_manage_firewall: true
+cockpit_firewall_zone: public
+cockpit_firewall_service: cockpit
+
+# Cockpit configuration settings (/etc/cockpit/cockpit.conf)
+cockpit_manage_config: true
+cockpit_port: 9090
+
+# CIS Hardening Compliance: Sesson Idle Timeout (in minutes)
+cockpit_idle_timeout: 15
+
+# Security Login Banner
+cockpit_banner: "Authorized access only. All activities are monitored and logged."
+
+# Allow root login via web console
+cockpit_allow_root_login: true
