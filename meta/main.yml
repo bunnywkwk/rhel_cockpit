@@ -1,0 +1,27 @@
+---
+galaxy_info:
+  author: "Aeron"
+  description: "Apply Cockpit Web Console role with VM Management (cockpit-machines), zero GUI/Virt-Manager"
+  company: "Aeron - Trainee at AIRNAV"
+  license: MIT
+  role_name: rhel_cockpit
+  namespace: ansible-lockdown
+  min_ansible_version: 2.16.1
+  platforms:
+    - name: EL
+      versions:
+        - "9"
+        - "10"
+  galaxy_tags:
+    - cockpit
+    - kvm
+    - webconsole
+    - virtualization
+    - rhel
+
+# Collections required by this role
+collections:
+  - ansible.posix
+  - community.general
+
+dependencies: []
