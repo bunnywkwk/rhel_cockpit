@@ -161,11 +161,6 @@ Client Browser (HTTPS) ---> Port 9090 ---> systemd (cockpit.socket)
 ### Step 5: `tasks/firewall.yml` (Firewall Rule Configuration)
 
 - **What it does**:
-  1. Gathers system service facts via `ansible.builtin.service_facts`.
-  2. Permanently enables `service: cockpit` in the public firewalld zone only when `firewalld.service` is running.
-- **Justification**:
-  - Replaces raw `systemctl is-active firewalld` shell commands with native Ansible facts.
-  - Prevents playbook failures on minimal hosts where `firewalld` is not installed or intentionally inactive.
   1. Gathers system service status facts into `ansible_facts.services` via `ansible.builtin.service_facts`.
   2. Permanently enables `service: cockpit` (TCP port 9090) in the public firewalld zone only when `firewalld.service` is verified to be in a running state.
 - **Justification (Why `service_facts` beats `command`)**:
@@ -239,12 +234,10 @@ This section records architectural iterations implemented based on senior mentor
 - **Implementation**: Moved core packages (`cockpit`, `cockpit-machines`, `cockpit-storaged`, `cockpit-networkmanager`, `cockpit-system`) into `vars/main.yml`. Added `cockpit_extra_packages: []` in `defaults/main.yml` for user-defined plugins.
 
 ### 2. Elimination of Raw Command in Firewall Task
+
 - **Mentor Guidance**: Avoid invoking shell processes with `ansible.builtin.command` when native Ansible modules or facts can evaluate system state cleanly.
 - **Implementation**: Replaced `command: systemctl is-active firewalld` with `ansible.builtin.service_facts` in `tasks/firewall.yml`.
 - **Engineering Justification**: `service_facts` queries the systemd state directly in Python and loads `ansible_facts.services`. If `firewalld` is absent or inactive, the task skips cleanly without generating non-zero shell exit codes (such as exit code 3) or requiring messy `failed_when: false` workarounds. This guarantees 100% clean, idempotent execution on both minimal and fully-configured hosts.
-
-- **Mentor Guidance**: Use native Ansible collection modules and facts rather than executing raw `ansible.builtin.command`.
-- **Implementation**: Replaced `systemctl is-active firewalld` with `ansible.builtin.service_facts` in `tasks/firewall.yml`.
 
 ### 3. Automated Verification Tool
 

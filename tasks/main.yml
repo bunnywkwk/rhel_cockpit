@@ -1,7 +1,5 @@
 ---
-# ==============================================================================
 # rhel_cockpit Main Tasks Entrypoint
-# ==============================================================================
 
 # Step 1: Validates that the target OS is Red Hat / EL 9 or 10
 - name: Run pre-flight OS validation

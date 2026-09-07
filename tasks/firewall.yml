@@ -1,7 +1,5 @@
 ---
-# ==============================================================================
 # Firewall Configuration
-# ==============================================================================
 
 # Gathers system service status facts without invoking shell commands
 - name: Gather system service facts

@@ -1,9 +1,7 @@
 ---
-# ==============================================================================
-# rhel_cockpit - Role Default Variables (Overridable)
-# ==============================================================================
 
-# Optional extra packages to install alongside mandatory Cockpit packages
+# rhel_cockpit - Role Default Variables (Overridable)
+
 # Users can specify optional Cockpit plugins (e.g. cockpit-podman, cockpit-sosreport)
 # without replacing core hypervisor management binaries.
 cockpit_extra_packages: []

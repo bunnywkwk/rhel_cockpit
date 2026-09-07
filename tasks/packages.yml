@@ -1,7 +1,5 @@
 ---
-# ==============================================================================
 # Package Installation & Headless Enforcement
-# ==============================================================================
 
 # Installs non-negotiable core Cockpit web console and virtualization management modules from vars/main.yml
 - name: Install core Cockpit web console and hypervisor modules
