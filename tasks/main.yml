@@ -1,24 +1,36 @@
 ---
-# rhel cockpit task main entry point
+# ==============================================================================
+# rhel_cockpit Main Tasks Entrypoint
+# ==============================================================================
 
-# Step 1: validate that the target OS is Red Hat 9 or 10
-- name: Run pre flight OS validaton
+# Step 1: Validates that the target OS is Red Hat / EL 9 or 10
+- name: Run pre-flight OS validation
   ansible.builtin.include_tasks: preflight.yml
 
-# Step 2: Install cockpit suite and ensure virt-manager is absent
-- name: Install cockpit packages and remove GUI tools
+# Step 2: Installs Cockpit web suite and ensures virt-manager is absent
+- name: Install Cockpit packages and enforce headless design
   ansible.builtin.include_tasks: packages.yml
 
 # Step 3: Configures /etc/cockpit/cockpit.conf with security banner and idle timeouts
-- name: Configure Cockpit service settings
+- name: Configure Cockpit security and service settings
   ansible.builtin.include_tasks: config.yml
   when: cockpit_manage_config | bool
 
-# Step 4: Enables and starts systemd socket activation on port 9099
+# Step 4: Enables and starts systemd socket activation on port 9090
 - name: Manage Cockpit systemd socket activation
   ansible.builtin.include_tasks: service.yml
 
 # Step 5: Configures firewalld to permanently permit Cockpit web traffic (port 9090)
-- name: Configure firewall rules for cockpit
+- name: Configure firewall rules for Cockpit
   ansible.builtin.include_tasks: firewall.yml
   when: cockpit_manage_firewall | bool
+
+# Step 6: Deploys automated Cockpit acceptance verification script to /usr/local/bin
+- name: Deploy Cockpit acceptance verification tool
+  ansible.builtin.copy:
+    src: verify_cockpit.py
+    dest: /usr/local/bin/verify_cockpit.py
+    owner: root
+    group: root
+    mode: "0755"
+  when: cockpit_deploy_verification_tools | default(true) | bool

@@ -1,15 +1,13 @@
 ---
+# ==============================================================================
 # Firewall Configuration
+# ==============================================================================
 
-# Checks if firewalld service is installed and running
-- name: Check if the firewalld is active
-  ansible.builtin.command:
-    cmd: systemctl is-active firewalld
-  register: cockpit_firewalld_status
-  changed_when: false
-  failed_when: false
+# Gathers system service status facts without invoking shell commands
+- name: Gather system service facts
+  ansible.builtin.service_facts:
 
-# Permanently permits cockpit service (port 9090/tcp) in firewalld
+# Permanently permits Cockpit service (TCP port 9090) through firewalld if active
 - name: Permit Cockpit service through firewalld
   ansible.posix.firewalld:
     service: "{{ cockpit_firewall_service }}"
@@ -17,5 +15,7 @@
     permanent: true
     immediate: true
     state: enabled
-  when: cockpit_firewalld_status.rc == 0
+  when:
+    - "'firewalld.service' in ansible_facts.services"
+    - "ansible_facts.services['firewalld.service']['state'] == 'running'"
   notify: Reload firewalld

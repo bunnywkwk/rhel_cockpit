@@ -1,15 +1,29 @@
 ---
-# Package Installation & GUI tool removal
+# ==============================================================================
+# Package Installation & Headless Enforcement
+# ==============================================================================
 
-# Install cockpit, vm manager (cockpit-machines), storage, and network module via defaults/main.yml
-- name: Install cockpit web console and management extenstion
+# Installs non-negotiable core Cockpit web console and virtualization management modules from vars/main.yml
+- name: Install core Cockpit web console and hypervisor modules
   ansible.builtin.dnf:
     name: "{{ cockpit_packages }}"
     state: present
     update_cache: true
 
-# Ensure legacy desktop GUI virt-manager is absent to enforce a headless hypervisor
+# Installs optional user-defined Cockpit plugins (e.g. cockpit-podman) without risking core packages
+- name: Install optional user-defined Cockpit packages
+  ansible.builtin.dnf:
+    name: "{{ cockpit_extra_packages }}"
+    state: present
+  when:
+    - cockpit_extra_packages is defined
+    - cockpit_extra_packages | length > 0
+
+# Ensures legacy desktop GUI virt-manager is uninstalled to enforce a headless hypervisor architecture
 - name: Ensure legacy virt-manager desktop GUI is absent
   ansible.builtin.dnf:
     name: "{{ cockpit_absent_packages }}"
     state: absent
+  when:
+    - cockpit_absent_packages is defined
+    - cockpit_absent_packages | length > 0

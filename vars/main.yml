@@ -1,0 +1,14 @@
+---
+# ==============================================================================
+# rhel_cockpit - Role Architecture Constants (Protected Variables)
+# ==============================================================================
+
+# Mandatory Cockpit web management packages
+# Defined in vars/main.yml to lock them down as non-negotiable role constants.
+# In Ansible variable precedence, vars/ prevents accidental overrides from group_vars.
+cockpit_packages:
+  - cockpit
+  - cockpit-machines
+  - cockpit-storaged
+  - cockpit-networkmanager
+  - cockpit-system
