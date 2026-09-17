@@ -23,12 +23,3 @@
   ansible.builtin.include_tasks: firewall.yml
   when: cockpit_manage_firewall | bool
 
-# Step 6: Deploys automated Cockpit acceptance verification script to /usr/local/bin
-- name: Deploy Cockpit acceptance verification tool
-  ansible.builtin.copy:
-    src: verify_cockpit.py
-    dest: /usr/local/bin/verify_cockpit.py
-    owner: root
-    group: root
-    mode: "0755"
-  when: cockpit_deploy_verification_tools | default(true) | bool

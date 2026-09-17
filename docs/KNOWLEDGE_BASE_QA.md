@@ -4,7 +4,7 @@ This document captures the core architecture decisions, security rationale, and 
 
 ---
 
-## ❓ Core Q&A Reference
+## Core Q&A Reference
 
 ### Q1: What is Cockpit and why do we use `cockpit-machines` instead of `virt-manager`?
 

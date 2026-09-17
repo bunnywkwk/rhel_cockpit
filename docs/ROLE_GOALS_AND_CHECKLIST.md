@@ -1,6 +1,6 @@
 # rhel_cockpit - Role Goals & Progress Checklist
 
-## 🎯 Role Mission
+## Role Mission
 Transform a bare RHEL 9 or RHEL 10 KVM host into a remotely managed hypervisor using the **Cockpit Web Console** (`https://<host>:9090`) with:
 * **VM Lifecycle Management**: Native integration with KVM/Libvirt via `cockpit-machines`.
 * **Zero Desktop GUI**: Strict headless server architecture (no X11/Wayland, ensuring legacy `virt-manager` is absent).
@@ -10,7 +10,7 @@ Transform a bare RHEL 9 or RHEL 10 KVM host into a remotely managed hypervisor u
 
 ---
 
-## 📋 Role Checklist
+## Role Checklist
 
 ### Step 1: Metadata & Defaults (Completed)
 - [x] **`meta/main.yml`**: Galaxy metadata, EL 9 & 10 platform support, collection requirements (`ansible.posix`, `community.general`).
