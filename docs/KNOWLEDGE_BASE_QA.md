@@ -81,8 +81,8 @@ This document captures the core architecture decisions, security rationale, and 
 ### Q8: Why parameterize socket activation in `defaults/main.yml` instead of hardcoding?
 
 - **A**:
-  - **Out-of-the-box Enforcement**: `defaults/main.yml` defaults to `cockpit_service_name: cockpit.socket`, `cockpit_service_state: started`, `cockpit_service_enabled: true`.
-  - **Operational Flexibility**: Allowing variable overrides lets sysadmins temporarily disable Cockpit during emergency maintenance windows (`-e cockpit_service_state=stopped`) or run CI/CD container tests without modifying the role's source code.
+  - **Out-of-the-box Enforcement**: `defaults/main.yml` defaults to `rhel_cockpit_service_name: cockpit.socket`, `rhel_cockpit_service_state: started`, `rhel_cockpit_service_enabled: true`.
+  - **Operational Flexibility**: Allowing variable overrides lets sysadmins temporarily disable Cockpit during emergency maintenance windows (`-e rhel_cockpit_service_state=stopped`) or run CI/CD container tests without modifying the role's source code.
 
 ---
 
@@ -126,13 +126,13 @@ This document captures the core architecture decisions, security rationale, and 
 
 ---
 
-### Q13: Why did we move `cockpit_packages` to `vars/main.yml` and expose `cockpit_extra_packages: []` in `defaults/main.yml`?
+### Q13: Why did we move `cockpit_packages` to `vars/main.yml` and expose `rhel_cockpit_extra_packages: []` in `defaults/main.yml`?
 
 - **A**:
   - **The List Replacement Trap**: If core packages are defined in `defaults/main.yml`, any user overriding `cockpit_packages` in `group_vars` (e.g. to install `cockpit-podman`) causes Ansible to replace the entire default list. As a result, **`cockpit-machines` is omitted**, and the hypervisor loses its Virtual Machine management tab.
   - **The Two-Tier Solution**:
     - `vars/main.yml` holds mandatory binaries (`cockpit`, `cockpit-machines`, `cockpit-storaged`, `cockpit-networkmanager`, `cockpit-system`) as protected role constants that cannot be accidentally replaced.
-    - `defaults/main.yml` provides `cockpit_extra_packages: []` where administrators can safely add supplemental plugins without risking core hypervisor management tools.
+    - `defaults/main.yml` provides `rhel_cockpit_extra_packages: []` where administrators can safely add supplemental plugins without risking core hypervisor management tools.
 
 ---
 

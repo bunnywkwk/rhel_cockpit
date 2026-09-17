@@ -4,6 +4,6 @@
 # Enable and starts cockpit.socker so Cockpit listen on TCP port 9090 on demand
 - name: Enable and start Cockpit systemd socket
   ansible.builtin.systemd_service:
-    name: "{{ cockpit_service_name }}"
-    enabled: "{{ cockpit_service_enabled }}"
-    state: "{{ cockpit_service_state }}"
+    name: "{{ rhel_cockpit_service_name }}"
+    enabled: "{{ rhel_cockpit_service_enabled }}"
+    state: "{{ rhel_cockpit_service_state }}"

@@ -4,34 +4,33 @@
 
 # Users can specify optional Cockpit plugins (e.g. cockpit-podman, cockpit-sosreport)
 # without replacing core hypervisor management binaries.
-cockpit_extra_packages: []
+rhel_cockpit_extra_packages: []
 
 # Legacy desktop GUI packages to ensure are ABSENT (enforcing a headless hypervisor)
-cockpit_absent_packages:
+rhel_cockpit_absent_packages:
   - virt-manager
 
 # Systemd Socket Activation and service state
-cockpit_service_name: cockpit.socket
-cockpit_service_state: started
-cockpit_service_enabled: true
+rhel_cockpit_service_name: cockpit.socket
+rhel_cockpit_service_state: started
+rhel_cockpit_service_enabled: true
 
 # Firewall management (open TCP port 9090 for Cockpit)
-cockpit_manage_firewall: true
-cockpit_firewall_zone: public
-cockpit_firewall_service: cockpit
+rhel_cockpit_manage_firewall: true
+rhel_cockpit_firewall_zone: public
+rhel_cockpit_firewall_service: cockpit
 
 # Cockpit configuration settings (/etc/cockpit/cockpit.conf)
-cockpit_manage_config: true
-cockpit_port: 9090
+rhel_cockpit_manage_config: true
+rhel_cockpit_port: 9090
 
 # CIS Hardening Compliance: Session Idle Timeout (in minutes)
-cockpit_idle_timeout: 15
+rhel_cockpit_idle_timeout: 15
 
 # Security Login Banner
-cockpit_banner: "Authorized access only. All activities are monitored and logged."
+rhel_cockpit_banner: "Authorized access only. All activities are monitored and logged."
 
 # Allow root login via web console
-cockpit_allow_root_login: true
+rhel_cockpit_allow_root_login: true
 
 # Deploy automated Cockpit verification script to /usr/local/bin
-cockpit_deploy_verification_tools: true

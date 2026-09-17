@@ -9,7 +9,7 @@ The role solves four key operational challenges:
 1. **Headless Hypervisor Management**: Replaces desktop GUI tools like `virt-manager` with browser-based VM management (`cockpit-machines`), eliminating X11/Wayland overhead.
 2. **Resource-Efficient Socket Activation**: Enforces systemd socket activation on TCP port 9090 (`cockpit.socket`) so zero background memory or CPU is consumed when no administrator is logged in.
 3. **CIS Benchmark Level 1 Compliance**: Configures session idle timeouts (15 minutes) and security login warning banners in `/etc/cockpit/cockpit.conf`.
-4. **Resilient Variable Strategy**: Eliminates the Ansible list replacement trap by isolating mandatory management packages in `vars/main.yml` while exposing `cockpit_extra_packages` for optional plugins.
+4. **Resilient Variable Strategy**: Eliminates the Ansible list replacement trap by isolating mandatory management packages in `vars/main.yml` while exposing `rhel_cockpit_extra_packages` for optional plugins.
 
 ---
 
@@ -49,7 +49,7 @@ rhel_cockpit/
 | Directory    | Purpose                        | Technical Justification                                                                                                                           |
 | :----------- | :----------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `meta/`      | Galaxy metadata & dependencies | Defines supported platforms (EL 9 and 10) and required collections (`ansible.posix`, `community.general`).                                        |
-| `defaults/`  | Configurable role variables    | Lowest precedence. Contains overridable settings: `cockpit_port`, `cockpit_idle_timeout`, `cockpit_banner`, and `cockpit_extra_packages`.         |
+| `defaults/`  | Configurable role variables    | Lowest precedence. Contains overridable settings: `rhel_cockpit_port`, `rhel_cockpit_idle_timeout`, `rhel_cockpit_banner`, and `rhel_cockpit_extra_packages`.         |
 | `vars/`      | Protected role constants       | High precedence. Stores the mandatory package list (`cockpit`, `cockpit-machines`, etc.) to prevent accidental list overwrites from `group_vars`. |
 | `tasks/`     | Modular execution files        | Divides installation, configuration, socket management, and firewall into focused, maintainable task files.                                       |
 | `handlers/`  | Event triggers                 | Flushes `cockpit.socket` restarts and `firewalld` reloads only when underlying configuration files physically change.                             |
@@ -76,7 +76,7 @@ If `cockpit_packages` is defined in `defaults/main.yml`, any user specifying a c
    - `cockpit-system`: System telemetry, systemd services, and journal log inspection.
 
 2. **`defaults/main.yml` (Optional Extra Packages)**:
-   Exposes `cockpit_extra_packages: []`. Administrators can add optional modules (e.g. `cockpit-podman`, `cockpit-sosreport`) without risking core VM management functionality.
+   Exposes `rhel_cockpit_extra_packages: []`. Administrators can add optional modules (e.g. `cockpit-podman`, `cockpit-sosreport`) without risking core VM management functionality.
 
 [SCREENSHOT: Terminal output of cockpit package installation task completing with cockpit-machines installed]
 
@@ -87,7 +87,7 @@ If `cockpit_packages` is defined in `defaults/main.yml`, any user specifying a c
 In enterprise datacenters, hypervisors are provisioned as **headless servers** (no graphical desktop environment):
 
 - **The Problem with `virt-manager`**: `virt-manager` is a desktop application requiring GTK, X11, or Wayland libraries. Installing it on a hypervisor drags in hundreds of graphical dependencies (~400MB+), increases the system's attack surface, and requires X11 forwarding over SSH.
-- **The Solution**: `tasks/packages.yml` explicitly enforces `state: absent` on `cockpit_absent_packages: [virt-manager]`.
+- **The Solution**: `tasks/packages.yml` explicitly enforces `state: absent` on `rhel_cockpit_absent_packages: [virt-manager]`.
 - **The Replacement**: `cockpit-machines` provides full VM management (power on, power off, snapshot, console VNC/SPICE access, hardware editing) directly inside any web browser via HTTPS.
 
 [SCREENSHOT: DNF task output confirming virt-manager is absent on the hypervisor host]
@@ -131,7 +131,7 @@ Client Browser (HTTPS) ---> Port 9090 ---> systemd (cockpit.socket)
 
 - **What it does**:
   1. Installs mandatory packages from `cockpit_packages` in `vars/main.yml`.
-  2. Installs optional packages from `cockpit_extra_packages` in `defaults/main.yml`.
+  2. Installs optional packages from `rhel_cockpit_extra_packages` in `defaults/main.yml`.
   3. Ensures legacy GUI tools (`virt-manager`) are uninstalled (`state: absent`).
 - **Justification**: Guarantees headless hypervisor standards and eliminates the list replacement trap.
 
@@ -142,7 +142,7 @@ Client Browser (HTTPS) ---> Port 9090 ---> systemd (cockpit.socket)
 - **What it does**:
   1. Creates `/etc/cockpit` directory with mode `0755`.
   2. Deploys `/etc/cockpit/cockpit.conf` using `templates/cockpit.conf.j2`.
-  3. Ensures root user access is permitted in `/etc/cockpit/disallowed-users` when `cockpit_allow_root_login: true`.
+  3. Ensures root user access is permitted in `/etc/cockpit/disallowed-users` when `rhel_cockpit_allow_root_login: true`.
 - **Justification**:
   - **CIS Idle Timeout**: Configures `IdleTimeout = 15` in both `[WebService]` and `[Session]` sections to comply with CIS Benchmark requirements for automated session termination.
   - **Security Warning Banner**: Displays legal and organizational authorization notices prior to authentication.
@@ -231,7 +231,7 @@ This section records architectural iterations implemented based on senior mentor
 ### 1. Two-Tier Package Architecture
 
 - **Mentor Guidance**: Core management packages must never be placed in `defaults/` where user inventory variables can unintentionally replace the list.
-- **Implementation**: Moved core packages (`cockpit`, `cockpit-machines`, `cockpit-storaged`, `cockpit-networkmanager`, `cockpit-system`) into `vars/main.yml`. Added `cockpit_extra_packages: []` in `defaults/main.yml` for user-defined plugins.
+- **Implementation**: Moved core packages (`cockpit`, `cockpit-machines`, `cockpit-storaged`, `cockpit-networkmanager`, `cockpit-system`) into `vars/main.yml`. Added `rhel_cockpit_extra_packages: []` in `defaults/main.yml` for user-defined plugins.
 
 ### 2. Elimination of Raw Command in Firewall Task
 

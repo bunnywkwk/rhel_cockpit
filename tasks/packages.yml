@@ -11,17 +11,17 @@
 # Installs optional user-defined Cockpit plugins (e.g. cockpit-podman) without risking core packages
 - name: Install optional user-defined Cockpit packages
   ansible.builtin.dnf:
-    name: "{{ cockpit_extra_packages }}"
+    name: "{{ rhel_cockpit_extra_packages }}"
     state: present
   when:
-    - cockpit_extra_packages is defined
-    - cockpit_extra_packages | length > 0
+    - rhel_cockpit_extra_packages is defined
+    - rhel_cockpit_extra_packages | length > 0
 
 # Ensures legacy desktop GUI virt-manager is uninstalled to enforce a headless hypervisor architecture
 - name: Ensure legacy virt-manager desktop GUI is absent
   ansible.builtin.dnf:
-    name: "{{ cockpit_absent_packages }}"
+    name: "{{ rhel_cockpit_absent_packages }}"
     state: absent
   when:
-    - cockpit_absent_packages is defined
-    - cockpit_absent_packages | length > 0
+    - rhel_cockpit_absent_packages is defined
+    - rhel_cockpit_absent_packages | length > 0

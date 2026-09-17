@@ -8,8 +8,8 @@
 # Permanently permits Cockpit service (TCP port 9090) through firewalld if active
 - name: Permit Cockpit service through firewalld
   ansible.posix.firewalld:
-    service: "{{ cockpit_firewall_service }}"
-    zone: "{{ cockpit_firewall_zone }}"
+    service: "{{ rhel_cockpit_firewall_service }}"
+    zone: "{{ rhel_cockpit_firewall_zone }}"
     permanent: true
     immediate: true
     state: enabled

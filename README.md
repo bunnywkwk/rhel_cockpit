@@ -49,17 +49,17 @@ Available default variables are defined in [defaults/main.yml](defaults/main.yml
 
 | Variable                            | Default          | Description                                                                  |
 | :---------------------------------- | :--------------- | :--------------------------------------------------------------------------- |
-| `cockpit_extra_packages`            | `[]`             | Optional extra Cockpit plugins (e.g. `cockpit-podman`, `cockpit-sosreport`). |
-| `cockpit_absent_packages`           | `[virt-manager]` | Legacy GUI packages ensured absent to maintain a headless host.              |
-| `cockpit_service_name`              | `cockpit.socket` | Name of the socket unit to manage.                                           |
-| `cockpit_service_state`             | `started`        | Desired socket state (`started`).                                            |
-| `cockpit_service_enabled`           | `true`           | Whether socket starts on boot.                                               |
-| `cockpit_manage_firewall`           | `true`           | Opens port 9090 in firewalld.                                                |
-| `cockpit_firewall_zone`             | `public`         | Firewalld zone to configure.                                                 |
-| `cockpit_port`                      | `9090`           | Web console TCP port.                                                        |
-| `cockpit_idle_timeout`              | `15`             | Session idle timeout in minutes (CIS requirement).                           |
-| `cockpit_banner`                    | _(String)_       | Authorized access login banner text.                                         |
-| `cockpit_allow_root_login`          | `true`           | Permits root administrative access via web console.                          |
+| `rhel_cockpit_extra_packages`            | `[]`             | Optional extra Cockpit plugins (e.g. `cockpit-podman`, `cockpit-sosreport`). |
+| `rhel_cockpit_absent_packages`           | `[virt-manager]` | Legacy GUI packages ensured absent to maintain a headless host.              |
+| `rhel_cockpit_service_name`              | `cockpit.socket` | Name of the socket unit to manage.                                           |
+| `rhel_cockpit_service_state`             | `started`        | Desired socket state (`started`).                                            |
+| `rhel_cockpit_service_enabled`           | `true`           | Whether socket starts on boot.                                               |
+| `rhel_cockpit_manage_firewall`           | `true`           | Opens port 9090 in firewalld.                                                |
+| `rhel_cockpit_firewall_zone`             | `public`         | Firewalld zone to configure.                                                 |
+| `rhel_cockpit_port`                      | `9090`           | Web console TCP port.                                                        |
+| `rhel_cockpit_idle_timeout`              | `15`             | Session idle timeout in minutes (CIS requirement).                           |
+| `rhel_cockpit_banner`                    | _(String)_       | Authorized access login banner text.                                         |
+| `rhel_cockpit_allow_root_login`          | `true`           | Permits root administrative access via web console.                          |
 | `cockpit_deploy_verification_tools` | `true`           | Deploys `/usr/local/bin/verify_cockpit.py` for automated compliance checks.  |
 
 _Note: Mandatory core packages (`cockpit`, `cockpit-machines`, `cockpit-storaged`, `cockpit-networkmanager`, `cockpit-system`) are defined in `vars/main.yml` as protected role constants._
@@ -87,10 +87,10 @@ _Note: Mandatory core packages (`cockpit`, `cockpit-machines`, `cockpit-storaged
   hosts: hypervisors
   become: true
   vars:
-    cockpit_idle_timeout: 30
-    cockpit_extra_packages:
+    rhel_cockpit_idle_timeout: 30
+    rhel_cockpit_extra_packages:
       - cockpit-podman
-    cockpit_banner: "WARNING: Authorized Access Only. All actions monitored."
+    rhel_cockpit_banner: "WARNING: Authorized Access Only. All actions monitored."
   roles:
     - role: rhel_cockpit
 ```

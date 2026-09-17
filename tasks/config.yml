@@ -26,5 +26,5 @@
     path: /etc/cockpit/disallowed-users
     line: root
     state: absent
-  when: cockpit_allow_root_login | bool
+  when: rhel_cockpit_allow_root_login | bool
   failed_when: false
