@@ -51,7 +51,7 @@ This document captures the core architecture decisions, security rationale, and 
 
 - **A**:
   1. **Firewalld Port 9090**: CIS enforces strict default-deny firewall policies. We explicitly configure `firewalld` to permanently allow `service: cockpit` (port `9090/tcp`).
-  2. **Session Idle Timeout**: CIS Benchmark requires terminating idle administrative sessions. We configure `IdleTimeout = 15` (or 30) minutes in `/etc/cockpit/cockpit.conf`.
+  2. **Session Idle Timeout**: CIS Benchmark requires terminating idle administrative sessions. We configure `IdleTimeout = 15` minutes in the `[Session]` section of `/etc/cockpit/cockpit.conf`.
   3. **PAM & TLS**: Cockpit utilizes the host's native PAM authentication and system crypto policies, ensuring compliance with CIS password and cipher standards.
 
 ---
@@ -78,11 +78,9 @@ This document captures the core architecture decisions, security rationale, and 
 
 ---
 
-### Q8: Why parameterize socket activation in `defaults/main.yml` instead of hardcoding?
+### Q8: Why are the socket name, state and enabled flag hardcoded in `service.yml`?
 
-- **A**:
-  - **Out-of-the-box Enforcement**: `defaults/main.yml` defaults to `rhel_cockpit_service_name: cockpit.socket`, `rhel_cockpit_service_state: started`, `rhel_cockpit_service_enabled: true`.
-  - **Operational Flexibility**: Allowing variable overrides lets sysadmins temporarily disable Cockpit during emergency maintenance windows (`-e rhel_cockpit_service_state=stopped`) or run CI/CD container tests without modifying the role's source code.
+- **A**: They are not settings. The role always enables and starts `cockpit.socket`, so exposing them as variables would only give something to override by mistake.
 
 ---
 
@@ -112,7 +110,7 @@ This document captures the core architecture decisions, security rationale, and 
   - **Yes, TCP port 9090 is coordinated across three system layers:**
     1. **Firewall Layer (`tasks/firewall.yml`)**: Enforcing `service: cockpit` in `firewalld`. In Enterprise Linux, `/usr/lib/firewalld/services/cockpit.xml` defines `<port protocol="tcp" port="9090"/>`. Enabling this service permits inbound traffic on port 9090.
     2. **Systemd Socket Layer (`tasks/service.yml`)**: Enabling `cockpit.socket`. The unit file contains `ListenStream=9090`, causing the Linux kernel to actively bind and listen on `0.0.0.0:9090`.
-    3. **Application Layer (`tasks/config.yml`)**: In `/etc/cockpit/cockpit.conf`, `Port = 9090` is explicitly set in the `[WebService]` section.
+    3. **Application Layer**: Cockpit's default port is 9090. It cannot be changed in `cockpit.conf` (see `man cockpit.conf`), only via `cockpit.socket`, so the role sets nothing for it.
 
 ---
 
@@ -148,13 +146,3 @@ This document captures the core architecture decisions, security rationale, and 
     ```
 
 ---
-
-### Q15: How does `/usr/local/bin/verify_cockpit.py` validate the entire Cockpit stack?
-
-- **A**:
-  - The automated acceptance script executes a 5-phase test:
-    1. **Package Verification**: Confirms `cockpit` and `cockpit-machines` are installed, and `virt-manager` is absent (headless architecture).
-    2. **Socket Activation**: Confirms `cockpit.socket` is enabled and active, and checks port 9090 is listening via `ss -tulpn`.
-    3. **Security Compliance**: Confirms `/etc/cockpit/cockpit.conf` enforces the CIS 15-minute `IdleTimeout` and security banner.
-    4. **Firewall Verification**: Confirms `firewalld` actively permits the `cockpit` service.
-    5. **Web Handshake**: Performs a local TLS connection to `https://127.0.0.1:9090` and validates an HTTP response.

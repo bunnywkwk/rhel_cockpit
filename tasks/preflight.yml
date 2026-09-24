@@ -2,7 +2,7 @@
 # Pre flight checks
 
 # Assert target machine belong to redhat os family and version 9 or 10
-- name: Validate tarrget operating system
+- name: Validate target operating system
   ansible.builtin.assert:
     that:
       - ansible_facts['os_family'] == 'RedHat'

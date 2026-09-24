@@ -1,5 +1,5 @@
 ---
-# Package Installation & Headless Enforcement
+# Package Installation
 
 # Installs non-negotiable core Cockpit web console and virtualization management modules from vars/main.yml
 - name: Install core Cockpit web console and hypervisor modules
@@ -13,15 +13,4 @@
   ansible.builtin.dnf:
     name: "{{ rhel_cockpit_extra_packages }}"
     state: present
-  when:
-    - rhel_cockpit_extra_packages is defined
-    - rhel_cockpit_extra_packages | length > 0
-
-# Ensures legacy desktop GUI virt-manager is uninstalled to enforce a headless hypervisor architecture
-- name: Ensure legacy virt-manager desktop GUI is absent
-  ansible.builtin.dnf:
-    name: "{{ rhel_cockpit_absent_packages }}"
-    state: absent
-  when:
-    - rhel_cockpit_absent_packages is defined
-    - rhel_cockpit_absent_packages | length > 0
+  when: rhel_cockpit_extra_packages | length > 0

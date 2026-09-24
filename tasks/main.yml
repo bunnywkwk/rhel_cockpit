@@ -5,12 +5,12 @@
 - name: Run pre-flight OS validation
   ansible.builtin.include_tasks: preflight.yml
 
-# Step 2: Installs Cockpit web suite and ensures virt-manager is absent
-- name: Install Cockpit packages and enforce headless design
+# Step 2: Installs the Cockpit web suite
+- name: Install Cockpit packages
   ansible.builtin.include_tasks: packages.yml
 
-# Step 3: Configures /etc/cockpit/cockpit.conf with security banner and idle timeouts
-- name: Configure Cockpit security and service settings
+# Step 3: Configures /etc/cockpit/cockpit.conf with the CIS session idle timeout
+- name: Configure Cockpit session idle timeout
   ansible.builtin.include_tasks: config.yml
   when: rhel_cockpit_manage_config | bool
 

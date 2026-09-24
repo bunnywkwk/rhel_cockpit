@@ -2,9 +2,10 @@
 
 An enterprise-grade Ansible role to deploy and configure the Cockpit Web Console with Virtual Machine Management (`cockpit-machines`) on RHEL 9 and RHEL 10 hypervisors.
 
-This role adheres strictly to headless server design (ensuring legacy `virt-manager` desktop GUI is absent), enables Systemd Socket Activation on TCP port 9090, configures firewalld rules, and applies security banners and idle timeouts ready for CIS Benchmark Level 1 compliance.
+This role keeps the hypervisor headless (no desktop GUI), enables Systemd Socket Activation on TCP port 9090, opens the port in firewalld, and applies the session idle timeout required by CIS Benchmark Level 1.
 
-Detailed architectural justifications, folder structure breakdowns, and verification procedures are documented in [docs/ARCHITECTURE_AND_JUSTIFICATIONS.md](docs/ARCHITECTURE_AND_JUSTIFICATIONS.md).
+Task-by-task explanation (what each task does and why it exists): [docs/TASK_WALKTHROUGH.md](docs/TASK_WALKTHROUGH.md).
+Architectural justifications and verification procedures: [docs/ARCHITECTURE_AND_JUSTIFICATIONS.md](docs/ARCHITECTURE_AND_JUSTIFICATIONS.md).
 
 ---
 
@@ -25,7 +26,6 @@ Detailed architectural justifications, folder structure breakdowns, and verifica
 
 - **Firewalld Port 9090**: Opens `service: cockpit` permanently so the web console is never locked out when CIS default-deny firewall rules are applied.
 - **Idle Session Timeout**: Sets `IdleTimeout = 15` in `/etc/cockpit/cockpit.conf` to satisfy CIS administrative session termination standards.
-- **Security Banner**: Displays an authorized access warning banner on the login screen.
 
 ---
 
@@ -50,17 +50,9 @@ Available default variables are defined in [defaults/main.yml](defaults/main.yml
 | Variable                            | Default          | Description                                                                  |
 | :---------------------------------- | :--------------- | :--------------------------------------------------------------------------- |
 | `rhel_cockpit_extra_packages`            | `[]`             | Optional extra Cockpit plugins (e.g. `cockpit-podman`, `cockpit-sosreport`). |
-| `rhel_cockpit_absent_packages`           | `[virt-manager]` | Legacy GUI packages ensured absent to maintain a headless host.              |
-| `rhel_cockpit_service_name`              | `cockpit.socket` | Name of the socket unit to manage.                                           |
-| `rhel_cockpit_service_state`             | `started`        | Desired socket state (`started`).                                            |
-| `rhel_cockpit_service_enabled`           | `true`           | Whether socket starts on boot.                                               |
 | `rhel_cockpit_manage_firewall`           | `true`           | Opens port 9090 in firewalld.                                                |
 | `rhel_cockpit_firewall_zone`             | `public`         | Firewalld zone to configure.                                                 |
-| `rhel_cockpit_port`                      | `9090`           | Web console TCP port.                                                        |
 | `rhel_cockpit_idle_timeout`              | `15`             | Session idle timeout in minutes (CIS requirement).                           |
-| `rhel_cockpit_banner`                    | _(String)_       | Authorized access login banner text.                                         |
-| `rhel_cockpit_allow_root_login`          | `true`           | Permits root administrative access via web console.                          |
-| `cockpit_deploy_verification_tools` | `true`           | Deploys `/usr/local/bin/verify_cockpit.py` for automated compliance checks.  |
 
 _Note: Mandatory core packages (`cockpit`, `cockpit-machines`, `cockpit-storaged`, `cockpit-networkmanager`, `cockpit-system`) are defined in `vars/main.yml` as protected role constants._
 
@@ -79,7 +71,7 @@ _Note: Mandatory core packages (`cockpit`, `cockpit-machines`, `cockpit-storaged
     - role: rhel_cockpit
 ```
 
-### 2. Custom Port, Extra Plugins, and Security Banner
+### 2. Extra Plugins and a Custom Idle Timeout
 
 ```yaml
 ---
@@ -90,7 +82,6 @@ _Note: Mandatory core packages (`cockpit`, `cockpit-machines`, `cockpit-storaged
     rhel_cockpit_idle_timeout: 30
     rhel_cockpit_extra_packages:
       - cockpit-podman
-    rhel_cockpit_banner: "WARNING: Authorized Access Only. All actions monitored."
   roles:
     - role: rhel_cockpit
 ```
@@ -99,25 +90,7 @@ _Note: Mandatory core packages (`cockpit`, `cockpit-machines`, `cockpit-storaged
 
 ## 5. Verification and Health Checks
 
-### Automated 1-Click Verification Tool
-
-This role deploys a standalone Python diagnostic verification script to `/usr/local/bin/verify_cockpit.py`.
-
-SSH into the hypervisor host and execute:
-
-```bash
-/usr/local/bin/verify_cockpit.py
-```
-
-This tool automatically validates:
-
-1. **Package Verification**: Confirms `cockpit` and `cockpit-machines` are installed, and `virt-manager` is absent.
-2. **Socket Activation**: Confirms `cockpit.socket` is enabled, active, and listening on port 9090.
-3. **Security Configuration**: Checks `/etc/cockpit/cockpit.conf` for 15-minute idle timeout and warning banner.
-4. **Firewall Verification**: Confirms firewalld allows the `cockpit` service.
-5. **Web Handshake**: Tests local HTTPS response on `https://127.0.0.1:9090`.
-
-### Manual CLI Commands
+### Manual CLI commands (run on the hypervisor)
 
 ```bash
 # 1. Verify Socket Status

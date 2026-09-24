@@ -6,9 +6,9 @@ The `rhel_cockpit` role provisions Red Hat Enterprise Linux (RHEL 9 and RHEL 10)
 
 The role solves four key operational challenges:
 
-1. **Headless Hypervisor Management**: Replaces desktop GUI tools like `virt-manager` with browser-based VM management (`cockpit-machines`), eliminating X11/Wayland overhead.
+1. **Headless Hypervisor Management**: Browser-based VM management (`cockpit-machines`) instead of a desktop GUI, so no X11/Wayland is needed on the host.
 2. **Resource-Efficient Socket Activation**: Enforces systemd socket activation on TCP port 9090 (`cockpit.socket`) so zero background memory or CPU is consumed when no administrator is logged in.
-3. **CIS Benchmark Level 1 Compliance**: Configures session idle timeouts (15 minutes) and security login warning banners in `/etc/cockpit/cockpit.conf`.
+3. **CIS Benchmark Level 1 Compliance**: Configures the session idle timeout (15 minutes) in `/etc/cockpit/cockpit.conf`.
 4. **Resilient Variable Strategy**: Eliminates the Ansible list replacement trap by isolating mandatory management packages in `vars/main.yml` while exposing `rhel_cockpit_extra_packages` for optional plugins.
 
 ---
@@ -36,8 +36,6 @@ rhel_cockpit/
 │   └── main.yml
 ├── templates/
 │   └── cockpit.conf.j2
-├── files/
-│   └── verify_cockpit.py
 └── docs/
     ├── ARCHITECTURE_AND_JUSTIFICATIONS.md
     ├── KNOWLEDGE_BASE_QA.md
@@ -49,12 +47,11 @@ rhel_cockpit/
 | Directory    | Purpose                        | Technical Justification                                                                                                                           |
 | :----------- | :----------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `meta/`      | Galaxy metadata & dependencies | Defines supported platforms (EL 9 and 10) and required collections (`ansible.posix`, `community.general`).                                        |
-| `defaults/`  | Configurable role variables    | Lowest precedence. Contains overridable settings: `rhel_cockpit_port`, `rhel_cockpit_idle_timeout`, `rhel_cockpit_banner`, and `rhel_cockpit_extra_packages`.         |
+| `defaults/`  | Configurable role variables    | Lowest precedence. Contains overridable settings: `rhel_cockpit_idle_timeout`, `rhel_cockpit_firewall_zone`, `rhel_cockpit_extra_packages`, and the two `manage_*` switches. |
 | `vars/`      | Protected role constants       | High precedence. Stores the mandatory package list (`cockpit`, `cockpit-machines`, etc.) to prevent accidental list overwrites from `group_vars`. |
 | `tasks/`     | Modular execution files        | Divides installation, configuration, socket management, and firewall into focused, maintainable task files.                                       |
-| `handlers/`  | Event triggers                 | Flushes `cockpit.socket` restarts and `firewalld` reloads only when underlying configuration files physically change.                             |
+| `handlers/`  | Event triggers                 | Restarts `cockpit.socket` only when `cockpit.conf` physically changes.                                                                 |
 | `templates/` | Jinja2 templates               | Dynamically templates `/etc/cockpit/cockpit.conf` based on role variables.                                                                        |
-| `files/`     | Standalone tools               | Deploys `/usr/local/bin/verify_cockpit.py` for automated compliance verification.                                                                 |
 | `docs/`      | Technical documentation        | Isolates role architecture design, justifications, and mentor changelogs within the role boundary.                                                |
 
 ---
@@ -82,15 +79,9 @@ If `cockpit_packages` is defined in `defaults/main.yml`, any user specifying a c
 
 ---
 
-## 4. Headless Hypervisor Architecture: Why `virt-manager` is Absent
+## 4. Headless Hypervisor Architecture
 
-In enterprise datacenters, hypervisors are provisioned as **headless servers** (no graphical desktop environment):
-
-- **The Problem with `virt-manager`**: `virt-manager` is a desktop application requiring GTK, X11, or Wayland libraries. Installing it on a hypervisor drags in hundreds of graphical dependencies (~400MB+), increases the system's attack surface, and requires X11 forwarding over SSH.
-- **The Solution**: `tasks/packages.yml` explicitly enforces `state: absent` on `rhel_cockpit_absent_packages: [virt-manager]`.
-- **The Replacement**: `cockpit-machines` provides full VM management (power on, power off, snapshot, console VNC/SPICE access, hardware editing) directly inside any web browser via HTTPS.
-
-[SCREENSHOT: DNF task output confirming virt-manager is absent on the hypervisor host]
+Hypervisors are provisioned as **headless servers** (no graphical desktop environment). VM management is done through `cockpit-machines` in a browser over HTTPS (power on/off, snapshots, VNC/SPICE console, hardware editing), so no desktop application such as `virt-manager` is needed. `virt-manager` is not shipped in RHEL 9 or 10, so the role does not try to remove it.
 
 ---
 
@@ -127,27 +118,24 @@ Client Browser (HTTPS) ---> Port 9090 ---> systemd (cockpit.socket)
 
 ---
 
-### Step 2: `tasks/packages.yml` (Package Installation & Headless Enforcement)
+### Step 2: `tasks/packages.yml` (Package Installation)
 
 - **What it does**:
   1. Installs mandatory packages from `cockpit_packages` in `vars/main.yml`.
   2. Installs optional packages from `rhel_cockpit_extra_packages` in `defaults/main.yml`.
-  3. Ensures legacy GUI tools (`virt-manager`) are uninstalled (`state: absent`).
-- **Justification**: Guarantees headless hypervisor standards and eliminates the list replacement trap.
+- **Justification**: Keeps mandatory packages out of `defaults/` so `group_vars` cannot replace them (the list replacement trap).
 
 ---
 
-### Step 3: `tasks/config.yml` (Security Configuration)
+### Step 3: `tasks/config.yml` (Session Idle Timeout)
 
-- **What it does**:
-  1. Creates `/etc/cockpit` directory with mode `0755`.
-  2. Deploys `/etc/cockpit/cockpit.conf` using `templates/cockpit.conf.j2`.
-  3. Ensures root user access is permitted in `/etc/cockpit/disallowed-users` when `rhel_cockpit_allow_root_login: true`.
-- **Justification**:
-  - **CIS Idle Timeout**: Configures `IdleTimeout = 15` in both `[WebService]` and `[Session]` sections to comply with CIS Benchmark requirements for automated session termination.
-  - **Security Warning Banner**: Displays legal and organizational authorization notices prior to authentication.
-
-[SCREENSHOT: Cockpit login screen displaying the configured security authorization banner]
+- **What it does**: Deploys `/etc/cockpit/cockpit.conf` from `templates/cockpit.conf.j2` and restarts `cockpit.socket` when it changes. The file contains only:
+  ```ini
+  [Session]
+  IdleTimeout = 15
+  ```
+- **Justification**: CIS requires idle administrative sessions to be terminated. `IdleTimeout` is a `[Session]` option (see `man cockpit.conf`); Cockpit has no idle timeout unless it is set.
+- **Deliberately not set** (Cockpit's defaults are used): the port (it cannot be set in `cockpit.conf`; it comes from `cockpit.socket`, default 9090), `AllowUnencrypted` (default `false`), the `/etc/cockpit` directory (owned by the `cockpit-ws` package), and the login banner (not needed). Root login is left at Cockpit's default: `root` is listed in `/etc/cockpit/disallowed-users`, so log in with an administrator account.
 
 ---
 
@@ -171,15 +159,6 @@ Client Browser (HTTPS) ---> Port 9090 ---> systemd (cockpit.socket)
 
 ---
 
-### Step 6: `tasks/main.yml` (Verification Tool Deployment)
-
-- **What it does**: Deploys `/usr/local/bin/verify_cockpit.py` with permissions `0755`.
-- **Justification**: Delivers an automated on-host diagnostic tool that verifies packages, socket activation, port listening, security settings, and local HTTPS responses.
-
-[SCREENSHOT: verify_cockpit.py execution showing all 5 verification phases passing (100%)]
-
----
-
 ## 7. Verification Checklist
 
 Execute the following checks on the target hypervisor host:
@@ -189,8 +168,6 @@ Execute the following checks on the target hypervisor host:
    ```bash
    rpm -q cockpit cockpit-machines
    # Expected: Both packages listed
-   rpm -q virt-manager
-   # Expected: package virt-manager is not installed
    ```
 
 2. **Systemd Socket Status**:
@@ -206,7 +183,7 @@ Execute the following checks on the target hypervisor host:
 
    ```bash
    cat /etc/cockpit/cockpit.conf
-   # Expected: IdleTimeout = 15 and Banner configured
+   # Expected: [Session] with IdleTimeout = 15
    ```
 
 4. **Firewall Status**:
@@ -214,12 +191,6 @@ Execute the following checks on the target hypervisor host:
    ```bash
    firewall-cmd --list-services | grep cockpit
    # Expected: cockpit included in service list
-   ```
-
-5. **Automated Verification Script**:
-   ```bash
-   /usr/local/bin/verify_cockpit.py
-   # Expected: [OK] ALL COCKPIT ACCEPTANCE CRITERIA PASSED! (100%)
    ```
 
 ---
@@ -239,7 +210,7 @@ This section records architectural iterations implemented based on senior mentor
 - **Implementation**: Replaced `command: systemctl is-active firewalld` with `ansible.builtin.service_facts` in `tasks/firewall.yml`.
 - **Engineering Justification**: `service_facts` queries the systemd state directly in Python and loads `ansible_facts.services`. If `firewalld` is absent or inactive, the task skips cleanly without generating non-zero shell exit codes (such as exit code 3) or requiring messy `failed_when: false` workarounds. This guarantees 100% clean, idempotent execution on both minimal and fully-configured hosts.
 
-### 3. Automated Verification Tool
+### 3. Automated Verification Tool (later removed)
 
 - **Mentor Guidance**: Provide an on-host acceptance script to validate that Cockpit is operational and compliant.
-- **Implementation**: Built and deployed `/usr/local/bin/verify_cockpit.py` verifying package state, socket activation, port 9090 listening, CIS idle timeout, and local HTTPS connectivity.
+- **Implementation**: A `verify_cockpit.py` script was built for this, then removed from the role. Verification is now the manual checklist in the Verification Checklist section and the README.

@@ -6,31 +6,12 @@
 # without replacing core hypervisor management binaries.
 rhel_cockpit_extra_packages: []
 
-# Legacy desktop GUI packages to ensure are ABSENT (enforcing a headless hypervisor)
-rhel_cockpit_absent_packages:
-  - virt-manager
-
-# Systemd Socket Activation and service state
-rhel_cockpit_service_name: cockpit.socket
-rhel_cockpit_service_state: started
-rhel_cockpit_service_enabled: true
-
-# Firewall management (open TCP port 9090 for Cockpit)
+# Firewall management (open the cockpit service, TCP 9090, in firewalld)
 rhel_cockpit_manage_firewall: true
 rhel_cockpit_firewall_zone: public
-rhel_cockpit_firewall_service: cockpit
 
-# Cockpit configuration settings (/etc/cockpit/cockpit.conf)
+# Deploy /etc/cockpit/cockpit.conf (session idle timeout)
 rhel_cockpit_manage_config: true
-rhel_cockpit_port: 9090
 
 # CIS Hardening Compliance: Session Idle Timeout (in minutes)
 rhel_cockpit_idle_timeout: 15
-
-# Security Login Banner
-rhel_cockpit_banner: "Authorized access only. All activities are monitored and logged."
-
-# Allow root login via web console
-rhel_cockpit_allow_root_login: true
-
-# Deploy automated Cockpit verification script to /usr/local/bin

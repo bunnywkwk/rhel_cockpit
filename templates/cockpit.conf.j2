@@ -1,21 +1,5 @@
 # /etc/cockpit/cockpit.conf
 # Managed by Ansible role: rhel_cockpit
 
-[WebService]
-{% if rhel_cockpit_port is defined %}
-Port = {{ rhel_cockpit_port }}
-{% endif %}
-{% if rhel_cockpit_banner is defined and rhel_cockpit_banner | length > 0 %}
-Banner = {{ rhel_cockpit_banner }}
-{% endif %}
-{% if rhel_cockpit_idle_timeout is defined %}
-IdleTimeout = {{ rhel_cockpit_idle_timeout }}
-{% endif %}
-{% if rhel_cockpit_allow_root_login is defined and not rhel_cockpit_allow_root_login | bool %}
-AllowUnencrypted = false
-{% endif %}
-
 [Session]
-{% if rhel_cockpit_idle_timeout is defined %}
 IdleTimeout = {{ rhel_cockpit_idle_timeout }}
-{% endif %}
