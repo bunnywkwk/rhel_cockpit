@@ -31,7 +31,6 @@ rhel_cockpit/
 │   ├── packages.yml
 │   ├── config.yml
 │   ├── service.yml
-│   └── firewall.yml
 ├── handlers/
 │   └── main.yml
 ├── templates/
@@ -46,10 +45,10 @@ rhel_cockpit/
 
 | Directory    | Purpose                        | Technical Justification                                                                                                                           |
 | :----------- | :----------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `meta/`      | Galaxy metadata & dependencies | Defines supported platforms (EL 9 and 10) and required collections (`ansible.posix`, `community.general`).                                        |
-| `defaults/`  | Configurable role variables    | Lowest precedence. Contains overridable settings: `rhel_cockpit_idle_timeout`, `rhel_cockpit_firewall_zone`, `rhel_cockpit_extra_packages`, and the two `manage_*` switches. |
+| `meta/`      | Galaxy metadata & dependencies | Defines supported platforms (EL 9 and 10) (the role uses only `ansible.builtin` modules, so no extra collections are required).                                        |
+| `defaults/`  | Configurable role variables    | Lowest precedence. Contains overridable settings: `rhel_cockpit_idle_timeout` and `rhel_cockpit_extra_packages`. |
 | `vars/`      | Protected role constants       | High precedence. Stores the mandatory package list (`cockpit`, `cockpit-machines`, etc.) to prevent accidental list overwrites from `group_vars`. |
-| `tasks/`     | Modular execution files        | Divides installation, configuration, socket management, and firewall into focused, maintainable task files.                                       |
+| `tasks/`     | Modular execution files        | Divides installation, configuration, and socket management into focused, maintainable task files.                                       |
 | `handlers/`  | Event triggers                 | Restarts `cockpit.socket` only when `cockpit.conf` physically changes.                                                                 |
 | `templates/` | Jinja2 templates               | Dynamically templates `/etc/cockpit/cockpit.conf` based on role variables.                                                                        |
 | `docs/`      | Technical documentation        | Isolates role architecture design, justifications, and mentor changelogs within the role boundary.                                                |
@@ -142,20 +141,7 @@ Client Browser (HTTPS) ---> Port 9090 ---> systemd (cockpit.socket)
 ### Step 4: `tasks/service.yml` (Socket Activation)
 
 - **What it does**: Enables and starts `cockpit.socket` using `ansible.builtin.systemd_service`.
-- **Justification**: Standardizes on-demand socket activation, opening TCP port 9090.
-
----
-
-### Step 5: `tasks/firewall.yml` (Firewall Rule Configuration)
-
-- **What it does**:
-  1. Gathers system service status facts into `ansible_facts.services` via `ansible.builtin.service_facts`.
-  2. Permanently enables `service: cockpit` (TCP port 9090) in the public firewalld zone only when `firewalld.service` is verified to be in a running state.
-- **Justification (Why `service_facts` beats `command`)**:
-  - **The Flaw of Raw `command`**: Running `command: systemctl is-active firewalld` executes a raw shell subprocess. If `firewalld` is uninstalled or stopped, `systemctl` exits with return code 3, throwing a fatal error unless masked with `failed_when: false`.
-  - **The Native `service_facts` Advantage**: `service_facts` queries the systemd bus directly using Ansible's internal Python engine. If `firewalld` is inactive or missing, the condition `'firewalld.service' in ansible_facts.services and ansible_facts.services['firewalld.service']['state'] == 'running'` simply evaluates to `false`, gracefully skipping the firewall task without errors or shell execution overhead.
-
-[SCREENSHOT: firewall-cmd --list-services output showing cockpit listed in active zone]
+- **Justification**: Standardizes on-demand socket activation: Cockpit listens on TCP 9090 and starts its web daemon only when someone connects.
 
 ---
 
@@ -186,7 +172,7 @@ Execute the following checks on the target hypervisor host:
    # Expected: [Session] with IdleTimeout = 15
    ```
 
-4. **Firewall Status**:
+4. **Firewall Status** (Cockpit is allowed by default; the role does not change the firewall):
 
    ```bash
    firewall-cmd --list-services | grep cockpit
@@ -204,10 +190,10 @@ This section records architectural iterations implemented based on senior mentor
 - **Mentor Guidance**: Core management packages must never be placed in `defaults/` where user inventory variables can unintentionally replace the list.
 - **Implementation**: Moved core packages (`cockpit`, `cockpit-machines`, `cockpit-storaged`, `cockpit-networkmanager`, `cockpit-system`) into `vars/main.yml`. Added `rhel_cockpit_extra_packages: []` in `defaults/main.yml` for user-defined plugins.
 
-### 2. Elimination of Raw Command in Firewall Task
+### 2. Elimination of Raw Command in Firewall Task (later removed)
 
 - **Mentor Guidance**: Avoid invoking shell processes with `ansible.builtin.command` when native Ansible modules or facts can evaluate system state cleanly.
-- **Implementation**: Replaced `command: systemctl is-active firewalld` with `ansible.builtin.service_facts` in `tasks/firewall.yml`.
+- **Implementation**: Replaced `command: systemctl is-active firewalld` with `ansible.builtin.service_facts` in `tasks/firewall.yml`. The whole firewall task was later removed because `cockpit` is already allowed in the `public` zone on stock RHEL 9 and 10.
 - **Engineering Justification**: `service_facts` queries the systemd state directly in Python and loads `ansible_facts.services`. If `firewalld` is absent or inactive, the task skips cleanly without generating non-zero shell exit codes (such as exit code 3) or requiring messy `failed_when: false` workarounds. This guarantees 100% clean, idempotent execution on both minimal and fully-configured hosts.
 
 ### 3. Automated Verification Tool (later removed)

@@ -12,14 +12,7 @@
 # Step 3: Configures /etc/cockpit/cockpit.conf with the CIS session idle timeout
 - name: Configure Cockpit session idle timeout
   ansible.builtin.include_tasks: config.yml
-  when: rhel_cockpit_manage_config | bool
 
 # Step 4: Enables and starts systemd socket activation on port 9090
 - name: Manage Cockpit systemd socket activation
   ansible.builtin.include_tasks: service.yml
-
-# Step 5: Configures firewalld to permanently permit Cockpit web traffic (port 9090)
-- name: Configure firewall rules for Cockpit
-  ansible.builtin.include_tasks: firewall.yml
-  when: rhel_cockpit_manage_firewall | bool
-

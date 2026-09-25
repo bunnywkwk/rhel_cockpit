@@ -21,9 +21,4 @@ galaxy_info:
     - rhel
     - security
 
-# Collections required by this role (must be list of strings in meta/main.yml)
-collections:
-  - ansible.posix
-  - community.general
-
 dependencies: []

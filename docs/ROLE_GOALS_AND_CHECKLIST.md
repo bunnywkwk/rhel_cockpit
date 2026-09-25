@@ -5,7 +5,6 @@ Transform a bare RHEL 9 or RHEL 10 KVM host into a remotely managed hypervisor u
 * **VM Lifecycle Management**: Native integration with KVM/Libvirt via `cockpit-machines`.
 * **Zero Desktop GUI**: Headless server architecture (no X11/Wayland); VMs are managed in the browser.
 * **Systemd Socket Activation**: Cockpit listens on `cockpit.socket` (port 9090) with on-demand daemon startup.
-* **Firewall Management**: Automated `firewalld` configuration to permit Cockpit web access.
 * **CIS Hardening Readiness**: Configured to remain accessible and secure even after CIS Level 1 benchmarks are applied.
 
 ---
@@ -13,8 +12,8 @@ Transform a bare RHEL 9 or RHEL 10 KVM host into a remotely managed hypervisor u
 ## Role Checklist
 
 ### Step 1: Metadata & Defaults (Completed)
-- [x] **`meta/main.yml`**: Galaxy metadata, EL 9 & 10 platform support, collection requirements (`ansible.posix`, `community.general`).
-- [x] **`defaults/main.yml`**: Configurable defaults: extra Cockpit packages, firewall switch/zone, and the session idle timeout.
+- [x] **`meta/main.yml`**: Galaxy metadata, EL 9 & 10 platform support, no collection requirements (only `ansible.builtin` modules).
+- [x] **`defaults/main.yml`**: Configurable defaults: extra Cockpit packages and the session idle timeout.
 
 ---
 
@@ -24,7 +23,6 @@ Transform a bare RHEL 9 or RHEL 10 KVM host into a remotely managed hypervisor u
 - [x] **`tasks/packages.yml`**: DNF installation of `cockpit`, `cockpit-machines`, `cockpit-storaged`, `cockpit-networkmanager`, `cockpit-system`.
 - [x] **`tasks/config.yml`**: Configuration of `/etc/cockpit/cockpit.conf` (session idle timeout).
 - [x] **`tasks/service.yml`**: Systemd socket activation management (`cockpit.socket`).
-- [x] **`tasks/firewall.yml`**: Firewalld rule permanent enablement for `service: cockpit` (port `9090`).
 
 ---
 

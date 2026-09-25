@@ -50,7 +50,7 @@ This document captures the core architecture decisions, security rationale, and 
 ### Q5: How do we prevent CIS Level 1 Hardening from breaking Cockpit?
 
 - **A**:
-  1. **Firewalld Port 9090**: CIS enforces strict default-deny firewall policies. We explicitly configure `firewalld` to permanently allow `service: cockpit` (port `9090/tcp`).
+  1. **Firewalld Port 9090**: the `cockpit` service is already allowed in firewalld's `public` zone on stock RHEL 9 and 10 (checked with `firewall-cmd --permanent --zone=public --list-services`), and the CIS roles do not remove services, so the role does not touch the firewall.
   2. **Session Idle Timeout**: CIS Benchmark requires terminating idle administrative sessions. We configure `IdleTimeout = 15` minutes in the `[Session]` section of `/etc/cockpit/cockpit.conf`.
   3. **PAM & TLS**: Cockpit utilizes the host's native PAM authentication and system crypto policies, ensuring compliance with CIS password and cipher standards.
 
@@ -108,19 +108,15 @@ This document captures the core architecture decisions, security rationale, and 
 
 - **A**:
   - **Yes, TCP port 9090 is coordinated across three system layers:**
-    1. **Firewall Layer (`tasks/firewall.yml`)**: Enforcing `service: cockpit` in `firewalld`. In Enterprise Linux, `/usr/lib/firewalld/services/cockpit.xml` defines `<port protocol="tcp" port="9090"/>`. Enabling this service permits inbound traffic on port 9090.
+    1. **Firewall Layer (not managed by the role)**: `/usr/lib/firewalld/services/cockpit.xml` defines TCP 9090, and the `cockpit` service is already listed in the default `public` zone on RHEL, so inbound traffic is permitted.
     2. **Systemd Socket Layer (`tasks/service.yml`)**: Enabling `cockpit.socket`. The unit file contains `ListenStream=9090`, causing the Linux kernel to actively bind and listen on `0.0.0.0:9090`.
     3. **Application Layer**: Cockpit's default port is 9090. It cannot be changed in `cockpit.conf` (see `man cockpit.conf`), only via `cockpit.socket`, so the role sets nothing for it.
 
 ---
 
-### Q12: What is `service_facts` and why is it superior to `command: systemctl is-active firewalld`?
+### Q12: Why does the role not configure firewalld?
 
-- **A**:
-  - **What it is**: `ansible.builtin.service_facts` is an official module that queries systemd directly via Python and returns a structured dictionary in `ansible_facts.services`.
-  - **Why it beats raw `command`**:
-    - Running `command: systemctl is-active firewalld` spawns a subshell process. If `firewalld` is stopped or not installed, `systemctl` exits with error code 3, failing the play unless masked with `failed_when: false`.
-    - With `service_facts`, Ansible checks `'firewalld.service' in ansible_facts.services and ansible_facts.services['firewalld.service']['state'] == 'running'`. If `firewalld` is inactive or missing, the condition evaluates cleanly to `false` without errors or subshell overhead.
+- **A**: It was tested. On rollback-state (stock) RHEL 9 and 10 hosts, `firewall-cmd --permanent --zone=public --list-services` already returns `cockpit dhcpv6-client ssh`, so a firewall task changed nothing. The CIS roles do not remove services from the zone (RHEL 9 rule 4.2.1 only audits; RHEL 10 rule 4.1.4 sets the zone target). The role therefore leaves firewalld alone.
 
 ---
 
